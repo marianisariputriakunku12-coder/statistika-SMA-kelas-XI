@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Statistika Interaktif: Mean, Median, dan Modus</title>
+<!-- Seluruh website berada dalam SATU file. Tidak memakai CDN/pustaka eksternal, jadi bisa dibuka offline. -->
+<style>
+/* ===== Warna & dasar (ubah di sini untuk mengganti tema) ===== */
+:root{--n:#0b2545;--t:#0f9d8a;--tl:#e0f5f1;--bg:#f4f8fb;--ink:#1c2b3a;--m:#5b6b7b;--o:#e07a10}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;font:17px/1.65 system-ui,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{position:sticky;top:0;z-index:9;background:var(--n);color:#fff}
+.top{display:flex;align-items:center;gap:10px;padding:6px 12px 0;font-size:.85rem;color:#9fc0e0}
+nav{display:flex;gap:2px;overflow-x:auto;padding:4px 10px}
+nav a{color:#cfe3f5;text-decoration:none;padding:7px 11px;border-radius:8px;white-space:nowrap;font-size:.92rem}
+nav a:hover,nav a.on{background:var(--t);color:#fff}
+#pw{height:4px;background:#1d3a63}#pb{height:100%;width:0;background:#5eead4;transition:width .4s}
+section{max-width:1040px;margin:auto;padding:44px 18px 8px}
+h2{color:var(--n);font-size:1.65rem;margin:0 0 14px}h3{color:var(--n);margin:.2em 0 .4em}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px #0b25451a;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+button,.btn{font:inherit;background:var(--t);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;text-decoration:none;display:inline-block;transition:.2s;margin:3px 3px 3px 0}
+button:hover,.btn:hover{background:#0b7d6e}button.s,.btn.s{background:var(--n)}
+button.o{background:#fff;color:var(--n);border:2px solid var(--n)}button.act{background:var(--o)}
+:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+.hero{background:linear-gradient(135deg,var(--n),#0e5f6b);color:#fff;border-radius:22px;padding:28px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+.hero h1{font-size:clamp(1.4rem,3.6vw,2.2rem);line-height:1.2;margin:.3em 0}
+.hero .card{color:var(--ink);margin:0}
+@media(max-width:760px){.hero{grid-template-columns:1fr}}
+.tag{background:#ffffff26;border-radius:20px;padding:3px 12px;font-size:.88rem}
+/* tabel */
+table{border-collapse:collapse;width:100%;font-size:.95rem}th,td{border:1px solid #d5dfe9;padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--n);color:#fff}.tw{overflow-x:auto}
+/* chips angka */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{background:#e8eef5;border-radius:9px;padding:5px 11px;font-weight:700;color:var(--n)}
+.chip.hi{background:var(--o);color:#fff}.chip.mo{background:var(--t);color:#fff}
+.f{background:var(--tl);border-left:5px solid var(--t);padding:10px 14px;border-radius:8px;font-weight:600}
+/* tab materi */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.pn{display:none}.pn.on{display:block}
+/* diagram batang */
+.chart{display:flex;align-items:stretch;gap:6px;height:210px;padding:8px 6px 0;border-bottom:2px solid #b9c7d6;overflow-x:auto}
+.col{flex:1;min-width:30px;max-width:64px;display:flex;flex-direction:column;justify-content:flex-end}
+.bar{background:var(--n);border-radius:6px 6px 0 0;transition:height .6s,background .4s;text-align:center;color:#fff;font-weight:700}
+.col.mode .bar{background:var(--t)}.col.med .bar{outline:3px solid var(--o)}
+.col i{font-style:normal;text-align:center;height:26px;font-size:.9rem}
+.leg{font-size:.85rem;color:var(--m);margin:6px 0}.leg b{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin:0 4px 0 8px}
+.empty{color:var(--m);padding:20px}
+/* garis bilangan */
+.nl{position:relative;height:160px;margin:14px 44px 6px}
+.nl .ax{position:absolute;left:0;right:0;top:80px;height:4px;background:#b9c7d6;border-radius:3px}
+.dot{position:absolute;width:13px;height:13px;border-radius:50%;background:var(--n);transform:translateX(-50%);opacity:.85}
+.mk{position:absolute;transform:translateX(-50%);text-align:center;font-size:.8rem;font-weight:700;white-space:nowrap;line-height:1.2;transition:left .7s}
+.mk.mean{top:88px;color:var(--t)}.mk.median{top:122px;color:var(--o)}
+.tk{position:absolute;top:90px;font-size:.75rem;color:var(--m);transform:translateX(-50%)}
+/* laboratorium */
+.rows{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.row{display:flex;background:#eef3f8;border-radius:10px;padding:4px}
+.row input{width:64px;font:inherit;text-align:center;border:2px solid #c5d3e0;border-radius:8px;padding:5px}
+.row input.bad,#nv.bad{border-color:#d33;background:#fff0f0}
+.row .x{background:none;color:var(--m);padding:0 6px;margin:0}
+#nv{width:80px;font:inherit;padding:8px;border:2px solid #c5d3e0;border-radius:8px}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.rc{background:var(--tl);border-radius:14px;padding:12px;text-align:center}.rc b{display:block;font-size:2rem;color:var(--n)}.rc small{display:block;color:var(--m)}
+#warn{color:#b3361b;font-weight:600}
+.ex.on{background:var(--o)}
+/* animasi */
+#animBox{position:relative;height:110px;margin:10px 0;overflow-x:auto;overflow-y:hidden}
+#animIn{position:relative;height:100%}
+.ac{position:absolute;top:56px;width:46px;text-align:center;transition:left 1s,background .4s;background:#e8eef5;border-radius:9px;padding:6px 0;font-weight:700;color:var(--n)}
+.ac.hi{background:var(--o);color:#fff}.ac.mo{background:var(--t);color:#fff}
+#mm{position:absolute;top:0;font-size:.8rem;font-weight:700;color:var(--o);text-align:center;width:90px;margin-left:-22px;transition:left 1s;opacity:0}
+/* evaluasi */
+.opt{display:block;padding:8px 12px;margin:5px 0;border:2px solid #dbe5ee;border-radius:10px;cursor:pointer}.opt:hover{background:var(--tl)}
+fieldset.card{border:0;margin:0 0 14px}.fb{margin-top:8px;padding:8px 12px;border-radius:8px;display:none}
+.fb.ok{display:block;background:#e3f6e8}.fb.no{display:block;background:#fde8e4}
+#score{font-size:1.05rem}textarea,.nt{width:100%;font:inherit;border:2px solid #c5d3e0;border-radius:8px;padding:8px}
+details{margin:6px 0}summary{cursor:pointer;color:var(--t);font-weight:600}
+footer{text-align:center;color:var(--m);padding:30px 18px;font-size:.9rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{header,button,.nv{display:none}}
+</style>
+</head>
+<body>
+<header>
+ <div class="top">📐 Statistika Interaktif · Kelas XI <span id="pt" style="margin-left:auto">Kemajuan: 0%</span></div>
+ <div id="pw"><div id="pb"></div></div>
+ <nav>
+  <a href="#beranda">Beranda</a><a href="#latar">Latar Belakang</a><a href="#kebutuhan">Analisis</a><a href="#tujuan">Tujuan</a>
+  <a href="#materi">Materi</a><a href="#visual">Visualisasi</a><a href="#lab">Simulasi</a><a href="#animasi">Animasi</a>
+  <a href="#evaluasi">Evaluasi</a><a href="#refleksi">Refleksi</a><a href="#uji">Uji Produk</a><a href="#referensi">Referensi</a>
+ </nav>
+</header>
+
+<!-- 1. BERANDA -->
+<section id="beranda">
+ <div class="hero">
+  <div>
+   <span class="tag">Matematika · Kelas XI SMA · Multimedia berbasis web</span>
+   <h1>STATISTIKA INTERAKTIF: MEMAHAMI MEAN, MEDIAN, DAN MODUS MELALUI DATA NILAI SISWA</h1>
+   <p>Ubah nilai ujian siswa, lalu amati langsung bagaimana mean, median, dan modus ikut berubah melalui tabel, diagram batang, animasi, simulasi, dan latihan soal.</p>
+   <a class="btn" href="#materi" style="background:#fff;color:var(--n)">📖 Mulai Belajar</a>
+   <a class="btn" href="#lab">🧪 Coba Simulasi</a>
+  </div>
+  <div class="card"><b>🧑‍🎓 Contoh data nilai 7 siswa</b><div id="chartH" class="chart"></div><div class="leg"><b style="background:var(--t)"></b>modus <b style="background:var(--o)"></b>median</div></div>
+ </div>
+</section>
+
+<!-- 2. LATAR BELAKANG -->
+<section id="latar"><h2>📌 Latar Belakang</h2>
+ <div class="card">
+  <p>Statistika digunakan untuk memahami dan menyimpulkan sekumpulan data. Dalam pembelajaran, peserta didik perlu memahami perbedaan mean, median, dan modus, serta bagaimana perubahan satu nilai dapat memengaruhi ketiga ukuran tersebut. Pemahaman ini penting karena ketiganya dihitung dengan cara berbeda sehingga memberi gambaran yang berbeda pula tentang data yang sama.</p>
+  <p>Multimedia berbasis web digunakan agar peserta didik tidak hanya membaca rumus, tetapi juga mengamati grafik, mengubah data, mencoba simulasi, dan mengevaluasi pemahamannya sendiri. Dengan melihat hasil perubahan secara langsung, hubungan antara data dan ukuran pemusatan data dapat dikonstruksi secara aktif oleh peserta didik.</p>
+ </div></section>
+
+<!-- 3. ANALISIS KEBUTUHAN -->
+<section id="kebutuhan"><h2>🔍 Analisis Kebutuhan</h2>
+ <p class="f">Catatan: ini adalah analisis kebutuhan awal yang disusun dari rancangan pembelajaran. Belum ada wawancara, survei, atau penelitian lapangan.</p>
+ <div class="grid">
+  <div class="card"><h3>👥 Sasaran pengguna</h3>Peserta didik kelas XI SMA.</div>
+  <div class="card"><h3>🎯 Kebutuhan pembelajaran</h3>Memahami mean, median, dan modus.</div>
+  <div class="card"><h3>⚠️ Kesulitan yang diatasi</h3>Membedakan ketiga ukuran pemusatan data dan memahami dampak perubahan nilai.</div>
+  <div class="card"><h3>🖼️ Kebutuhan media</h3>Teks, gambar, tabel, diagram, animasi, simulasi interaktif, dan evaluasi digital.</div>
+  <div class="card"><h3>💻 Kebutuhan teknis</h3>Mudah diakses melalui laptop dan ponsel, tanpa instalasi.</div>
+  <div class="card"><h3>📝 Kebutuhan evaluasi</h3>Latihan soal dengan skor dan umpan balik.</div>
+ </div></section>
+
+<!-- 4. TUJUAN -->
+<section id="tujuan"><h2>🎯 Tujuan Pembelajaran</h2>
+ <div class="card">Setelah menggunakan website ini, peserta didik diharapkan mampu:
+  <ol><li>Menjelaskan pengertian mean, median, dan modus.</li><li>Menghitung mean, median, dan modus dari data tunggal.</li><li>Menjelaskan pengaruh perubahan satu nilai terhadap mean, median, dan modus.</li><li>Membaca dan menafsirkan tabel serta diagram frekuensi.</li><li>Menarik kesimpulan berdasarkan hasil simulasi data.</li></ol></div></section>
+
+<!-- 5. MATERI -->
+<section id="materi"><h2>📖 Materi Pembelajaran</h2>
+ <div class="tabs" id="tabs"><button data-t="A">A. Mean</button><button class="s" data-t="B">B. Median</button><button class="s" data-t="C">C. Modus</button><button class="s" data-t="D">D. Perbandingan</button></div>
+ <div class="card pn on" id="pA"><h3>Mean (rata-rata)</h3>
+  <p>Mean adalah nilai rata-rata, yaitu hasil bagi jumlah seluruh nilai dengan banyaknya data.</p>
+  <p class="f">Mean = jumlah seluruh nilai ÷ banyaknya data &nbsp;atau&nbsp; x̄ = Σxᵢ ÷ n</p>
+  <p><b>Keterangan:</b> x̄ = mean; Σxᵢ = jumlah seluruh nilai; n = banyaknya data.</p>
+  <p><b>Langkah:</b> (1) jumlahkan semua nilai, (2) hitung banyaknya data, (3) bagi jumlah dengan banyaknya data.</p>
+  <p><b>Contoh:</b> data nilai 5 siswa.</p><div class="chips" data-a="70,75,80,85,90"></div>
+  <p>Mean = (70 + 75 + 80 + 85 + 90) ÷ 5 = 400 ÷ 5 = <b>80</b>.</p></div>
+ <div class="card pn" id="pB"><h3>Median (nilai tengah)</h3>
+  <p>Median adalah nilai tengah setelah data <b>diurutkan</b> dari kecil ke besar. Kotak oranye menandai nilai tengah.</p>
+  <p><b>Data ganjil:</b> 70, 75, 80, 85, 90</p><div class="chips" data-a="70,75,80,85,90" data-h="med"></div><p>Median = nilai ke-3 = <b>80</b>.</p>
+  <p><b>Data genap:</b> 60, 70, 80, 90</p><div class="chips" data-a="60,70,80,90" data-h="med"></div><p>Median = (70 + 80) ÷ 2 = <b>75</b>.</p></div>
+ <div class="card pn" id="pC"><h3>Modus</h3>
+  <p>Modus adalah nilai yang frekuensi kemunculannya paling tinggi. Kotak hijau menandai modus.</p>
+  <p><b>Contoh:</b> 70, 75, 80, 80, 90</p><div class="chips" data-a="70,75,80,80,90" data-h="mod"></div><p>Modus = <b>80</b> karena muncul 2 kali.</p>
+  <p><b>Dua modus:</b> 70, 70, 80, 80, 90</p><div class="chips" data-a="70,70,80,80,90" data-h="mod"></div><p>Modus = <b>70 dan 80</b> (bimodal).</p>
+  <p><b>Tidak ada modus:</b> 70, 75, 80, 85, 90 (semua nilai muncul sekali).</p></div>
+ <div class="card pn" id="pD"><h3>Perbandingan Mean, Median, dan Modus</h3><div class="tw"><table>
+  <tr><th></th><th>Mean</th><th>Median</th><th>Modus</th></tr>
+  <tr><td><b>Pengertian</b></td><td>Rata-rata seluruh nilai</td><td>Nilai tengah data berurutan</td><td>Nilai dengan frekuensi tertinggi</td></tr>
+  <tr><td><b>Cara menghitung</b></td><td>Jumlah ÷ banyak data</td><td>Urutkan, lalu ambil nilai tengah</td><td>Hitung frekuensi, ambil yang terbanyak</td></tr>
+  <tr><td><b>Contoh: 70, 75, 80, 80, 90</b></td><td>395 ÷ 5 = 79</td><td>80</td><td>80</td></tr>
+  <tr><td><b>Pengaruh perubahan nilai</b></td><td>Berubah jika nilai mana pun berubah; peka terhadap nilai ekstrem</td><td>Berubah jika nilai di posisi tengah berubah; tahan terhadap nilai ekstrem</td><td>Berubah jika frekuensi tertinggi berubah</td></tr>
+  <tr><td><b>Situasi yang sesuai</b></td><td>Data merata tanpa nilai ekstrem, mis. rata-rata nilai ulangan</td><td>Ada nilai yang sangat tinggi/rendah, mis. data pendapatan</td><td>Mencari yang paling sering muncul, mis. ukuran sepatu terlaris</td></tr></table></div></div>
+</section>
+
+<!-- 6. VISUALISASI (memakai data yang sama dengan simulasi) -->
+<section id="visual"><h2>📊 Visualisasi Pembelajaran</h2>
+ <p class="f">Visualisasi ini memakai data yang sama dengan Laboratorium Data. Ubah data di sana, tampilan di sini ikut berubah. <a href="#lab" class="btn s">Buka Laboratorium</a></p>
+ <div class="grid"><div class="card"><h3>Tabel nilai siswa</h3><div class="tw" id="tbl"></div></div>
+  <div class="card"><h3>Tabel frekuensi</h3><div class="tw" id="ftbl"></div></div></div>
+ <div class="card"><h3>Diagram batang frekuensi</h3><div id="chartV" class="chart"></div>
+  <div class="leg"><b style="background:var(--n)"></b>frekuensi <b style="background:var(--t)"></b>modus (frekuensi tertinggi) <b style="background:var(--o)"></b>bingkai oranye = median</div></div>
+ <div class="card"><h3>Posisi median pada data terurut</h3><div class="chips" id="sortV"></div>
+  <h3>Garis bilangan: mean (▲) dan median (◆)</h3><div class="nl" id="lineV"></div><p class="f" id="meanV"></p></div>
+</section>
+
+<!-- 7. SIMULASI -->
+<section id="lab"><h2>🧪 Laboratorium Data Interaktif</h2>
+ <div class="card">
+  <p>Ketik langsung pada kotak nilai untuk mengubahnya. Nilai yang valid hanya angka 0–100.</p>
+  <div class="rows" id="rows"></div>
+  <div class="nv"><input id="nv" placeholder="0–100" inputmode="decimal" aria-label="Nilai baru">
+   <button id="bAdd">➕ Tambah data</button><button id="bSort" class="s">↕️ Urutkan</button><button id="bRes" class="o">↺ Reset ke data awal</button><button id="bRef" class="o">📌 Jadikan data ini acuan</button></div>
+  <div id="warn" role="alert"></div>
+  <div class="res" id="res"></div>
+  <p><b>Data terurut:</b></p><div class="chips" id="sorted"></div>
+ </div>
+ <div class="card"><h3>Diagram batang frekuensi (otomatis)</h3><div id="chartL" class="chart"></div>
+  <div class="leg"><b style="background:var(--t)"></b>modus <b style="background:var(--o)"></b>median</div></div>
+ <div class="card"><h3>💡 Penjelasan perubahan (dibanding data acuan)</h3><ul id="expl"></ul></div>
+ <div class="card"><h3>🔬 Eksperimen siap pakai</h3><div id="exs"></div>
+  <div id="refl" style="display:none"><h3>Pertanyaan reflektif</h3>
+   <ol><li>Apakah mean berubah?</li><li>Apakah median berubah?</li><li>Apakah modus berubah?</li><li>Mengapa perubahan tersebut terjadi?</li></ol>
+   <details><summary>Lihat petunjuk jawaban</summary><p id="why"></p></details></div></div>
+</section>
+
+<!-- 8. ANIMASI -->
+<section id="animasi"><h2>🎬 Animasi Pembelajaran</h2>
+ <div class="card"><p>Animasi memakai data dari Laboratorium. Perhatikan urutan: pengurutan → median → mean → modus.</p>
+  <button id="aGo">▶ Mulai / Ulangi</button><button id="aStop" class="s">■ Hentikan</button>
+  <div id="animBox"><div id="animIn"></div></div>
+  <p id="animNote" class="f">Tekan “Mulai / Ulangi”.</p><p id="animCalc"></p></div></section>
+
+<!-- 9. EVALUASI -->
+<section id="evaluasi"><h2>📝 Evaluasi Peserta Didik</h2>
+ <p>10 soal pilihan ganda. Kunci dan pembahasan baru muncul setelah kamu menekan “Periksa Jawaban”. Hasil tidak disimpan di server.</p>
+ <div id="quiz"></div><button id="bCheck">✔ Periksa Jawaban</button><button id="bAgain" class="s">↺ Ulangi Evaluasi</button>
+ <div id="score" class="card" style="margin-top:12px;display:none"></div></section>
+
+<!-- 10. REFLEKSI -->
+<section id="refleksi"><h2>💭 Refleksi dan Kesimpulan</h2>
+ <div class="card" id="rf"></div>
+ <div class="card"><h3>Kesimpulan</h3><p>Mean, median, dan modus memiliki cara penentuan yang berbeda. Mean bergantung pada jumlah seluruh nilai, median pada nilai di posisi tengah data terurut, dan modus pada frekuensi tertinggi. Karena itu, perubahan satu nilai dapat memengaruhi ketiganya secara berbeda: mean sering berubah, median hanya berubah jika posisi tengah berubah, dan modus hanya berubah jika frekuensi tertinggi berubah.</p></div></section>
+
+<!-- 11. EVALUASI PRODUK -->
+<section id="uji"><h2>✅ Evaluasi Produk Multimedia</h2>
+ <p class="f">Isi setelah website benar-benar diuji. Tidak ada hasil uji, skor validasi, atau persentase kelayakan yang diisi otomatis. Catatan tidak tersimpan, gunakan tombol Cetak/PDF untuk menyimpannya.</p>
+ <div class="card tw"><table id="ck"><tr><th>Aspek yang diuji</th><th>Lulus?</th><th>Catatan hasil pengujian</th></tr></table>
+  <button id="bPrint">🖨 Cetak / simpan PDF</button></div></section>
+
+<!-- 12. REFERENSI -->
+<section id="referensi"><h2>📚 Referensi</h2>
+ <div class="card"><ul>
+  <li>Google Sites: <a href="https://sites.google.com/" target="_blank" rel="noopener">https://sites.google.com/</a></li>
+  <li>GeoGebra: <a href="https://www.geogebra.org/" target="_blank" rel="noopener">https://www.geogebra.org/</a></li>
+  <li>Google Forms: <a href="https://forms.google.com/" target="_blank" rel="noopener">https://forms.google.com/</a></li>
+  <li>Kemendikbudristek. <i>Buku Teks Matematika SMA/MA Kelas XI</i> (Buku Sekolah Elektronik): <a href="https://buku.kemdikbud.go.id/" target="_blank" rel="noopener">https://buku.kemdikbud.go.id/</a></li>
+  <li>Khan Academy. <i>Summarizing quantitative data (mean, median, mode)</i>: <a href="https://www.khanacademy.org/math/statistics-probability/summarizing-quantitative-data" target="_blank" rel="noopener">khanacademy.org</a></li>
+  <li>Wikipedia. <i>Central tendency</i>: <a href="https://en.wikipedia.org/wiki/Central_tendency" target="_blank" rel="noopener">en.wikipedia.org/wiki/Central_tendency</a></li></ul>
+  <small>Periksa kembali tautan dan edisi buku sebelum dicantumkan di laporan.</small></div></section>
+<footer>Media pembelajaran untuk tugas Multimedia Pembelajaran Matematika. Semua perhitungan berjalan di browser; tidak ada data dikirim ke server.</footer>
+
+<script>
+/* ===== UTILITAS PERHITUNGAN ===== */
+const $=s=>document.querySelector(s), BASE=[70,75,80,80,85,90,95];
+const fmt=n=>String(parseFloat(n.toFixed(2))).replace('.',',');          // 82.14 -> "82,14"
+const num=s=>{s=String(s).trim().replace(',','.');return s===''?NaN:Number(s)}; // kosong/teks -> NaN
+const ok=x=>x>=0&&x<=100;                                                  // NaN -> false
+function stats(a){                                                          // a = array angka valid
+ if(!a.length)return null;
+ const s=[...a].sort((x,y)=>x-y), n=s.length, sum=s.reduce((p,c)=>p+c,0);
+ const med=n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2;                             // median SETELAH diurutkan
+ const f={};s.forEach(v=>f[v]=(f[v]||0)+1);const mx=Math.max(...Object.values(f));
+ const modes=mx>1?Object.keys(f).filter(k=>f[k]===mx).map(Number).sort((a,b)=>a-b):[]; // [] = tidak ada modus
+ return{s,n,sum,mean:sum/n,med,f,mx,modes};
+}
+const mTxt=st=>st.modes.length?st.modes.map(fmt).join(' dan '):'Tidak ada';
+const medIdx=n=>n%2?[(n-1)/2]:[n/2-1,n/2];
+const chips=(a,h)=>{const st=stats(a);return a.map((v,i)=>{let c='chip';
+ if(h==='med'&&medIdx(a.length).includes(i))c+=' hi'; if(h==='mod'&&st.modes.includes(v))c+=' mo';
+ return `<span class="${c}">${fmt(v)}</span>`}).join('')};
+
+/* ===== DIAGRAM BATANG (batang dipertahankan agar tinggi berubah halus) ===== */
+function drawChart(box,st){
+ box.querySelectorAll(':scope>:not(.col)').forEach(e=>e.remove());
+ if(!st){box.innerHTML='<p class="empty">Belum ada data valid.</p>';return}
+ const keys=Object.keys(st.f).map(Number).sort((a,b)=>a-b);
+ box.querySelectorAll('.col').forEach(c=>{if(!keys.includes(+c.dataset.v))c.remove()});
+ keys.forEach((k,i)=>{let c=box.querySelector(`.col[data-v="${k}"]`);
+  if(!c){c=document.createElement('div');c.className='col';c.dataset.v=k;c.innerHTML='<div class="bar" style="height:0"></div><i>'+fmt(k)+'</i>';box.appendChild(c)}
+  c.style.order=i;
+  c.classList.toggle('mode',st.modes.includes(k));c.classList.toggle('med',st.med===k);
+  const b=c.firstChild;b.textContent=st.f[k];
+  requestAnimationFrame(()=>b.style.height=`calc((100% - 26px) * ${st.f[k]/st.mx})`);
+ });
+}
+function drawLine(box,st){
+ if(!box.firstChild)box.innerHTML='<div class="ax"></div><div class="dots"></div><div class="mk mean">▲<br><span></span></div><div class="mk median">◆<br><span></span></div>'+[0,25,50,75,100].map(t=>`<span class="tk" style="left:${t}%">${t}</span>`).join('');
+ const d=box.querySelector('.dots');
+ if(!st){d.innerHTML='';return}
+ const seen={};d.innerHTML=st.s.map(v=>{seen[v]=seen[v]||0;return `<div class="dot" style="left:${v}%;top:${66-14*seen[v]++}px"></div>`}).join('');
+ const mk=(c,v,t)=>{const e=box.querySelector('.'+c);e.style.left=v+'%';e.lastChild.textContent=t+' '+fmt(v)};
+ mk('mean',st.mean,'Mean');mk('median',st.med,'Median');
+}
+
+/* ===== LABORATORIUM ===== */
+let data=BASE.map(String), ref=stats(BASE);
+const L=$('#rows'), esc=v=>String(v).replace(/[&"<]/g,c=>'&#'+c.charCodeAt(0)+';');
+const valid=()=>data.map(num).filter(ok);
+function renderRows(){L.innerHTML=data.map((v,i)=>`<div class="row" data-i="${i}"><input value="${esc(v)}" inputmode="decimal" aria-label="Nilai ke-${i+1}"><button class="x" title="Hapus nilai" aria-label="Hapus nilai ke-${i+1}">✕</button></div>`).join('')}
+function explain(st){
+ if(!st)return '<li>Masukkan minimal satu nilai valid (0–100).</li>';
+ const ch=(a,b)=>Math.abs(a-b)>1e-9,r=ref,o=[];
+ o.push(ch(st.mean,r.mean)?`Mean ${st.mean>r.mean?'naik':'turun'} dari ${fmt(r.mean)} menjadi ${fmt(st.mean)}, karena jumlah nilai dan/atau banyak data berubah.`:'Mean tetap, karena jumlah nilai dan banyak data tidak berubah.');
+ o.push(ch(st.med,r.med)?`Median berubah dari ${fmt(r.med)} menjadi ${fmt(st.med)}, karena nilai di posisi tengah data terurut sekarang berbeda.`:'Median tetap, karena nilai di posisi tengah data terurut masih sama.');
+ const a=mTxt(r),b=mTxt(st);
+ o.push(a!==b?`Modus berubah dari ${a} menjadi ${b}, karena nilai dengan frekuensi tertinggi berbeda.`:`Modus tetap (${b}), karena frekuensi tertinggi masih dimiliki nilai yang sama.`);
+ return o.map(x=>`<li>${x}</li>`).join('');
+}
+function update(){
+ const v=valid(),st=stats(v),bad=data.length-v.length;
+ $('#warn').textContent=!data.length?'⚠️ Data kosong. Tambahkan nilai 0–100.':bad?`⚠️ ${bad} isian tidak valid (kosong, bukan angka, atau di luar 0–100) dan tidak dihitung.`:'';
+ [...L.children].forEach((r,i)=>r.firstChild.classList.toggle('bad',!ok(num(data[i]))));
+ const n=st&&st.n, rc=(t,val,d,r)=>`<div class="rc">${t}<b>${val}</b><small>${d}</small><small>${r}</small></div>`;
+ $('#res').innerHTML=st?
+  rc('Mean',fmt(st.mean),`${fmt(st.sum)} ÷ ${n}`,`acuan: ${fmt(ref.mean)}`)+
+  rc('Median',fmt(st.med),n%2?`n ganjil: nilai ke-${(n+1)/2}`:`n genap: rata-rata nilai ke-${n/2} & ke-${n/2+1}`,`acuan: ${fmt(ref.med)}`)+
+  rc('Modus',mTxt(st),st.mx>1?`muncul ${st.mx}×${st.modes.length>1?' (lebih dari satu modus)':''}`:'semua nilai muncul 1×',`acuan: ${mTxt(ref)}`)
+  :'<div class="rc">Belum ada hasil</div>';
+ $('#sorted').innerHTML=st?chips(st.s,'med'):'';$('#sortV').innerHTML=$('#sorted').innerHTML;
+ drawChart($('#chartL'),st);drawChart($('#chartV'),st);drawLine($('#lineV'),st);
+ $('#expl').innerHTML=explain(st);
+ $('#tbl').innerHTML='<table><tr><th>No</th><th>Nama</th><th>Nilai</th></tr>'+v.map((x,i)=>`<tr><td>${i+1}</td><td>Siswa ${i+1}</td><td>${fmt(x)}</td></tr>`).join('')+'</table>';
+ $('#ftbl').innerHTML=st?'<table><tr><th>Nilai</th><th>Frekuensi</th></tr>'+Object.keys(st.f).map(Number).sort((a,b)=>a-b).map(k=>`<tr><td>${fmt(k)}</td><td>${st.f[k]}</td></tr>`).join('')+'</table>':'<p class="empty">Belum ada data.</p>';
+ $('#meanV').textContent=st?`Mean = ${fmt(st.sum)} ÷ ${n} = ${fmt(st.mean)} · Median = ${fmt(st.med)} · Modus = ${mTxt(st)}`:'Belum ada data valid.';
+}
+L.oninput=e=>{data[e.target.closest('.row').dataset.i]=e.target.value;update()};
+L.onclick=e=>{if(e.target.classList.contains('x')){data.splice(e.target.closest('.row').dataset.i,1);renderRows();update()}};
+$('#bAdd').onclick=()=>{const x=num($('#nv').value),f=$('#nv');
+ if(!ok(x)){f.classList.add('bad');$('#warn').textContent='⚠️ Masukkan angka antara 0 dan 100.';return}
+ f.classList.remove('bad');data.push(String(x));f.value='';renderRows();update()};
+$('#nv').onkeydown=e=>{if(e.key==='Enter')$('#bAdd').click()};
+$('#bRef').onclick=()=>{const st=stats(valid());if(st){ref=st;update()}};
+$('#bSort').onclick=()=>{ // urutkan dengan animasi perpindahan (FLIP)
+ const rows=[...L.children],first=rows.map(r=>r.getBoundingClientRect());
+ const k=i=>{const x=num(data[i]);return isNaN(x)?1e9:x};
+ const ord=data.map((_,i)=>i).sort((a,b)=>k(a)-k(b));
+ data=ord.map(i=>data[i]);ord.forEach((o,ni)=>{L.appendChild(rows[o]);rows[o].dataset.i=ni});
+ ord.forEach(o=>{const r=rows[o],b=r.getBoundingClientRect();r.style.transition='none';
+  r.style.transform=`translate(${first[o].left-b.left}px,${first[o].top-b.top}px)`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{r.style.transition='transform .6s';r.style.transform=''}))});
+ update()};
+/* eksperimen: [nama, fungsi pembuat data dari data awal, petunjuk jawaban] */
+const EX=[
+['Data awal',a=>a,'Data acuan: jumlah 575, n = 7, nilai ke-4 adalah 80, dan 80 muncul paling sering. Mean = 82,14; median = 80; modus = 80.'],
+['Ubah 70 → 100',a=>a.map(x=>x===70?100:x),'Jumlah naik 30, sehingga mean naik. Urutan baru 75, 80, 80, 85, 90, 95, 100 membuat nilai ke-4 menjadi 85, sehingga median ikut naik. Modus 80 tetap karena masih muncul dua kali.'],
+['Ubah 95 → 60',a=>a.map(x=>x===95?60:x),'Jumlah turun 35, sehingga mean turun. Urutan baru 60, 70, 75, 80, 80, 85, 90 masih memiliki nilai ke-4 = 80, sehingga median tetap. Modus tetap 80.'],
+['Tambah nilai sama dengan modus (80)',a=>[...a,80],'80 kini muncul 3 kali, jadi modus tetap 80. Data menjadi 8 (genap): median = rata-rata nilai ke-4 dan ke-5, keduanya 80. Mean sedikit turun karena 80 sedikit di bawah mean lama (82,14).'],
+['Tambah nilai ekstrem (0)',a=>[...a,0],'Nilai 0 jauh dari data lain sehingga menarik mean turun tajam. Median hanya bergeser pada urutan; nilai ke-4 dan ke-5 sama-sama 80, jadi tetap 80. Ini menunjukkan median lebih tahan terhadap nilai ekstrem.'],
+['Jadikan jumlah data genap (tambah 100)',a=>[...a,100],'Data menjadi 8 nilai, sehingga median = (80 + 85) ÷ 2 = 82,5. Mean naik karena ditambah 100. Modus tetap 80.']];
+$('#exs').innerHTML=EX.map((e,i)=>`<button class="ex s" data-i="${i}">${e[0]}</button>`).join('');
+function runEx(i){data=EX[i][1](BASE).map(String);ref=stats(BASE);renderRows();update();
+ document.querySelectorAll('.ex').forEach((b,j)=>b.classList.toggle('on',j===i));
+ $('#refl').style.display='block';$('#why').textContent=EX[i][2];$('#refl details').open=false}
+$('#exs').onclick=e=>{if(e.target.dataset.i!==undefined)runEx(+e.target.dataset.i)};
+$('#bRes').onclick=()=>runEx(0);
+
+/* ===== ANIMASI ===== */
+let tm=[];const T=(f,ms)=>tm.push(setTimeout(f,ms)),stopA=()=>{tm.forEach(clearTimeout);tm=[]};
+function playA(){
+ stopA();const v=valid(),st=stats(v),box=$('#animIn'),note=$('#animNote'),calc=$('#animCalc');calc.textContent='';
+ if(!st){box.innerHTML='';note.textContent='Data kosong atau tidak valid. Perbaiki data di Laboratorium.';return}
+ const W=54,n=v.length,idx=v.map((_,i)=>i).sort((a,b)=>v[a]-v[b]),pos=[];idx.forEach((o,p)=>pos[o]=p);
+ box.style.width=(n*W+60)+'px';
+ box.innerHTML=v.map((x,i)=>`<div class="ac" style="left:${i*W}px">${fmt(x)}</div>`).join('')+'<div id="mm">▼<br>Median</div>';
+ const cs=[...box.querySelectorAll('.ac')],mm=$('#mm');
+ note.textContent='Langkah 1: data awal belum berurutan.';
+ T(()=>{note.textContent='Langkah 2: data diurutkan dari kecil ke besar.';cs.forEach((c,i)=>c.style.left=pos[i]*W+'px')},1500);
+ T(()=>{const mi=medIdx(n);note.textContent=n%2?`Langkah 3: n = ${n} (ganjil), median adalah nilai ke-${(n+1)/2}.`:`Langkah 3: n = ${n} (genap), median adalah rata-rata nilai ke-${n/2} dan ke-${n/2+1}.`;
+  mm.style.opacity=1;mm.style.left=((mi[0]+mi[mi.length-1])/2*W)+'px';cs.forEach((c,i)=>{if(mi.includes(pos[i]))c.classList.add('hi')});calc.textContent='Median = '+fmt(st.med)},3500);
+ T(()=>{note.textContent='Langkah 4: jumlahkan semua nilai.';calc.textContent=st.s.map(fmt).join(' + ')+' = '+fmt(st.sum)},5500);
+ T(()=>{note.textContent='Langkah 5: bagi jumlah dengan banyaknya data.';calc.textContent=`Mean = ${fmt(st.sum)} ÷ ${n} = ${fmt(st.mean)}`},7500);
+ T(()=>{note.textContent=st.modes.length?'Langkah 6: nilai berwarna hijau adalah modus (frekuensi tertinggi).':'Langkah 6: tidak ada modus karena semua nilai muncul sekali.';
+  cs.forEach((c,i)=>{if(st.modes.includes(v[i]))c.classList.add('mo')});calc.textContent=`Mean = ${fmt(st.mean)} · Median = ${fmt(st.med)} · Modus = ${mTxt(st)}`},9500);
+}
+$('#aGo').onclick=playA;$('#aStop').onclick=()=>{stopA();$('#animNote').textContent='Animasi dihentikan. Tekan “Mulai / Ulangi” untuk memutar lagi.'};
+
+/* ===== MATERI ===== */
+document.querySelectorAll('.chips[data-a]').forEach(c=>c.innerHTML=chips(c.dataset.a.split(',').map(Number),c.dataset.h));
+$('#tabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+ document.querySelectorAll('.pn').forEach(p=>p.classList.toggle('on',p.id==='p'+t));
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('s',b.dataset.t!==t))};
+
+/* ===== EVALUASI (10 soal; a = indeks jawaban benar, mulai dari 0) ===== */
+const Q=[
+{lv:'Konsep',t:'Materi B: Median',q:'Nilai tengah dari sekumpulan data yang telah diurutkan disebut …',o:['Mean','Median','Modus','Jangkauan'],a:1,e:'Median adalah nilai tengah data yang sudah diurutkan. Mean adalah rata-rata dan modus adalah nilai yang paling sering muncul.'},
+{lv:'Konsep',t:'Materi C: Modus',q:'Pada diagram batang frekuensi nilai siswa, batang yang paling tinggi menunjukkan …',o:['Mean','Modus','Median','Nilai terkecil'],a:1,e:'Batang tertinggi berarti frekuensi terbesar, dan nilai dengan frekuensi terbesar adalah modus.'},
+{lv:'Perhitungan',t:'Materi A: Mean',q:'Mean dari data 6, 7, 8, 9, 10 adalah …',o:['8','7','9','40'],a:0,e:'Jumlah = 6+7+8+9+10 = 40. Mean = 40 ÷ 5 = 8.'},
+{lv:'Perhitungan',t:'Materi C: Modus',q:'Modus dari data 4, 5, 5, 6, 7, 7, 7, 8 adalah …',o:['5','6','7','8'],a:2,e:'Nilai 7 muncul 3 kali, lebih banyak daripada 5 (2 kali).'},
+{lv:'Perhitungan',t:'Materi B: Median',q:'Median dari data 9, 3, 7, 1, 5 adalah …',o:['7','3','5','9'],a:2,e:'Urutkan dahulu: 1, 3, 5, 7, 9. Nilai tengah (ke-3) adalah 5. Nilai 7 hanyalah nilai tengah data yang belum diurutkan.'},
+{lv:'Perhitungan',t:'Materi B: Median',q:'Median dari data 12, 4, 8, 2, 10, 6 adalah …',o:['6','7','8','9'],a:1,e:'Urutan: 2, 4, 6, 8, 10, 12. Banyak data genap, jadi median = (6 + 8) ÷ 2 = 7.'},
+{lv:'Perhitungan',t:'Materi C: Modus',q:'Data 70, 75, 80, 80, 90, 90 memiliki modus …',o:['80 saja','90 saja','80 dan 90','Tidak ada modus'],a:2,e:'Nilai 80 dan 90 sama-sama muncul 2 kali (frekuensi tertinggi), sehingga ada dua modus.'},
+{lv:'Analisis',t:'Pengaruh perubahan data',q:'Data: 70, 75, 80, 85, 90. Jika nilai 70 diubah menjadi 100, mean dan median yang baru adalah …',o:['Mean 80, median 80','Mean 86, median 85','Mean 86, median 80','Mean 85, median 85'],a:1,e:'Data baru terurut: 75, 80, 85, 90, 100. Jumlah = 430, mean = 430 ÷ 5 = 86. Nilai tengahnya 85.'},
+{lv:'Analisis',t:'Pengaruh perubahan data',q:'Data: 70, 75, 80, 80, 90. Nilai 90 diubah menjadi 100. Pernyataan yang benar adalah …',o:['Mean, median, dan modus berubah','Mean berubah, median dan modus tetap','Median berubah, mean dan modus tetap','Hanya modus yang berubah'],a:1,e:'Mean naik dari 79 menjadi 81. Data terurut baru: 70, 75, 80, 80, 100, jadi median tetap 80 dan modus tetap 80.'},
+{lv:'Analisis',t:'Pengaruh perubahan data',q:'Data: 70, 75, 80, 85, 90. Ditambahkan satu nilai 0. Perubahan yang paling besar terjadi pada …',o:['Mean, turun dari 80 menjadi sekitar 66,67','Median, turun dari 80 menjadi 70','Modus, menjadi 0','Ketiganya berubah sama besar'],a:0,e:'Mean baru = 400 ÷ 6 ≈ 66,67. Median baru = (75 + 80) ÷ 2 = 77,5. Jadi mean lebih peka terhadap nilai ekstrem. Data tetap tidak punya modus.'}];
+function renderQ(){
+ $('#quiz').innerHTML=Q.map((x,i)=>`<fieldset class="card"><legend><b>Soal ${i+1}</b> <small>(${x.lv})</small></legend><p>${x.q}</p>${x.o.map((o,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${'ABCD'[j]}. ${o}</label>`).join('')}<div class="fb" id="fb${i}"></div></fieldset>`).join('');
+ $('#score').style.display='none';
+}
+$('#bCheck').onclick=()=>{
+ const sc=$('#score');sc.style.display='block';
+ const un=Q.filter((_,i)=>!document.querySelector(`input[name=q${i}]:checked`)).length;
+ if(un){sc.textContent=`⚠️ Masih ada ${un} soal yang belum dijawab. Lengkapi dahulu sebelum diperiksa.`;return}
+ let right=0;const wrong=new Set();
+ Q.forEach((x,i)=>{const s=+document.querySelector(`input[name=q${i}]:checked`).value,good=s===x.a,fb=$('#fb'+i);
+  if(good)right++;else wrong.add(x.t);
+  fb.className='fb '+(good?'ok':'no');fb.innerHTML=`${good?'✅ Benar.':'❌ Salah.'} Kunci jawaban: <b>${'ABCD'[x.a]}. ${x.o[x.a]}</b><br>${x.e}`;
+  document.querySelectorAll(`input[name=q${i}]`).forEach(r=>r.disabled=true)});
+ const nilai=Math.round(right/Q.length*100);
+ sc.innerHTML=`<h3>Nilai: ${nilai} / 100</h3>Benar: <b>${right}</b> · Salah: <b>${Q.length-right}</b><br>`+(wrong.size?`Bagian yang perlu dipelajari kembali: <b>${[...wrong].join('; ')}</b>.`:'Hebat! Semua jawaban benar.');
+ sc.scrollIntoView({behavior:'smooth',block:'center'});
+};
+$('#bAgain').onclick=()=>{renderQ();$('#quiz').scrollIntoView({behavior:'smooth'})};
+
+/* ===== REFLEKSI ===== */
+$('#rf').innerHTML=[
+['Apa perbedaan mean, median, dan modus?','Mean adalah rata-rata (jumlah ÷ banyak data), median adalah nilai tengah data terurut, modus adalah nilai yang paling sering muncul.'],
+['Apa yang terjadi ketika satu nilai sangat tinggi ditambahkan?','Mean naik cukup banyak karena jumlah nilai bertambah besar. Median hanya bergeser sedikit atau tetap, dan modus biasanya tetap. Coba eksperimen “nilai ekstrem”.'],
+['Mengapa median tidak selalu berubah ketika satu nilai berubah?','Median hanya bergantung pada nilai di posisi tengah. Jika nilai yang berubah tidak mengubah isi posisi tengah setelah diurutkan, median tetap.'],
+['Bagaimana simulasi membantu memahami materi?','Kamu dapat mengubah data dan langsung melihat perubahan angka serta diagram, sehingga hubungan sebab-akibatnya terlihat.']
+].map((r,i)=>`<p><b>${i+1}. ${r[0]}</b></p><textarea rows="2" placeholder="Tulis jawabanmu di sini (tidak disimpan)"></textarea><details><summary>Lihat petunjuk jawaban</summary>${r[1]}</details>`).join('');
+
+/* ===== CHECKLIST UJI PRODUK ===== */
+['Ketepatan materi','Ketepatan perhitungan','Fungsi simulasi','Fungsi diagram','Fungsi animasi','Kemudahan navigasi','Keterbacaan teks','Responsivitas di laptop dan ponsel','Fungsi evaluasi dan umpan balik']
+.forEach(a=>$('#ck').insertAdjacentHTML('beforeend',`<tr><td>${a}</td><td><input type="checkbox" aria-label="${a}"></td><td><input class="nt" placeholder="Catatan setelah diuji"></td></tr>`));
+$('#bPrint').onclick=()=>window.print();
+
+/* ===== PROGRES BELAJAR & NAVIGASI AKTIF ===== */
+const secs=[...document.querySelectorAll('section')],seen=new Set();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;
+ seen.add(e.target.id);const p=Math.round(seen.size/secs.length*100);
+ $('#pb').style.width=p+'%';$('#pt').textContent='Kemajuan: '+p+'%';
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#'+e.target.id))}),{rootMargin:'-40% 0px -50% 0px'});
+secs.forEach(s=>io.observe(s));
+
+/* ===== MULAI ===== */
+drawChart($('#chartH'),stats(BASE));renderRows();update();renderQ();
+</script>
+</body>
+</html>
